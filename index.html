@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔮 점성술</title>
+<title>🔮 루피티_점성술 </title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height: 100vh; color: white; padding: 20px; }
@@ -123,6 +123,8 @@
       <h2 style="color:#c4b5fd;margin-bottom:12px;font-size:1.1rem">🔮 운세 분석</h2>
       <div class="analysis-text" id="analysis-text"></div>
     </div>
+    
+    <button onclick="copyResult()" style="width:100%;margin-top:12px;padding:10px;background:rgba(124,58,237,0.3);border:1px solid #7c3aed;border-radius:10px;color:#c4b5fd;cursor:pointer;font-size:0.85rem">📋 분석 결과 복사</button>
 
     <button class="toggle-btn" onclick="toggleChart()">▼ 차트 데이터 보기</button>
     <div class="card" id="chart-detail" style="display:none">
@@ -320,6 +322,11 @@
   }
   function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove() }
   function showChatErr(msg) { document.getElementById('chat-err-msg').textContent = msg; document.getElementById('chat-err').style.display = 'block' }
+  function copyResult() {
+  const text = document.getElementById('analysis-text').textContent
+  navigator.clipboard.writeText(text).then(() => { alert('✅ 복사됐어요!') })
+}
+
   function hideChatErr() { document.getElementById('chat-err').style.display = 'none' }
 </script>
 </body>
