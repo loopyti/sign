@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔮 별자리 운세</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height: 100vh; color: white; padding: 20px; }
+  .container { max-width: 600px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 1.8rem; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #a78bfa; font-size: 0.85rem; margin-bottom: 24px; }
+  .card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  label { display: block; color: #c4b5fd; font-size: 0.85rem; margin-bottom: 6px; }
+  .row { display: grid; gap: 10px; margin-bottom: 14px; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  input, select { width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; font-size: 0.95rem; outline: none; }
+  input:focus, select:focus { border-color: #a78bfa; }
+  input::placeholder { color: #7c6fac; }
+  select option { background: #1e1b4b; }
+  .hint { color: #7c6fac; font-size: 0.75rem; margin-top: 4px; }
+  .err { color: #f87171; font-size: 0.75rem; margin-top: 4px; }
+  .btn { width: 100%; padding: 13px; background: #7c3aed; border: none; border-radius: 12px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .btn:hover { background: #6d28d9; }
+  .btn-sm { padding: 8px 16px; font-size: 0.85rem; background: rgba(124,58,237,0.4); border: 1px solid #7c3aed; border-radius: 8px; color: white; cursor: pointer; }
+  #loading { display: none; text-align: center; padding: 40px 0; }
+  .spinner { width: 48px; height: 48px; border: 4px solid #4c1d95; border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error-box { display: none; background: rgba(127,29,29,0.5); border: 1px solid #ef4444; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .error-msg { color: #fca5a5; margin-bottom: 12px; white-space: pre-line; }
+  .error-btns { display: flex; gap: 8px; }
+  #result { display: none; }
+  .meta { text-align: center; color: #7c6fac; font-size: 0.8rem; margin-bottom: 12px; }
+  .analysis-text { color: #e2e8f0; line-height: 1.8; white-space: pre-wrap; font-size: 0.9rem; }
+  .toggle-btn { background: none; border: none; color: #a78bfa; font-size: 0.85rem; cursor: pointer; text-decoration: underline; display: block; margin: 8px auto; }
+  .chart-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
+  .chart-table tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .chart-table td { padding: 5px 4px; color: #cbd5e1; }
+  .chart-table th { padding: 10px 4px 6px; color: #a78bfa; text-align: left; font-size: 0.85rem; border-bottom: 1px solid rgba(167,139,250,0.3); }
+  .quick-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .quick-btn { padding: 6px 12px; font-size: 0.8rem; background: rgba(109,40,217,0.3); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; color: #c4b5fd; cursor: pointer; }
+  .messages { max-height: 360px; overflow-y: auto; margin-bottom: 12px; }
+  .msg { display: flex; margin-bottom: 8px; }
+  .msg.user { justify-content: flex-end; }
+  .bubble { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; }
+  .msg.user .bubble { background: #7c3aed; }
+  .msg.bot .bubble { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .typing { display: flex; gap: 4px; padding: 4px; }
+  .dot { width: 8px; height: 8px; background: #a78bfa; border-radius: 50%; animation: bounce 0.9s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.6)} 40%{transform:scale(1)} }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input { flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; font-size: 0.9rem; outline: none; }
+  .chat-input:focus { border-color: #a78bfa; }
+  .send-btn { padding: 10px 16px; background: #7c3aed; border: none; border-radius: 10px; color: white; cursor: pointer; }
+  .chat-err { color: #f87171; font-size: 0.78rem; margin: 6px 0; }
+  .retry-link { color: #a78bfa; cursor: pointer; text-decoration: underline; }
+  .reset-btn { display: block; margin: 0 auto; background: none; border: none; color: #7c6fac; font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+  .dropdown { display:none; position:absolute; top:100%; left:0; right:0; background:#1e1b4b; border:1px solid #7c3aed; border-radius:8px; z-index:100; max-height:200px; overflow-y:auto; }
+  .dropdown-item { padding:10px 12px; cursor:pointer; font-size:0.85rem; color:#e2e8f0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .dropdown-item:hover { background:rgba(124,58,237,0.3); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>✨ 별자리 운세</h1>
+  <p class="subtitle">출생 정보를 입력하면 AI가 차트를 분석해드립니다 · 참고/엔터테인먼트용</p>
+
+  <div class="card" id="form-card">
+    <div class="row row-3">
+      <div><label>년도</label><input type="number" id="year" placeholder="1990" min="1900" max="2024"></div>
+      <div><label>월</label><input type="number" id="month" placeholder="1" min="1" max="12"></div>
+      <div><label>일</label><input type="number" id="day" placeholder="1" min="1" max="31"></div>
+    </div>
+    <div class="row row-2">
+      <div><label>시</label><input type="number" id="hour" placeholder="12" min="0" max="23"></div>
+      <div><label>분</label><input type="number" id="minute" placeholder="0" min="0" max="59" value="0"></div>
+    </div>
+    <p class="hint" style="margin-bottom:14px">정확한 시간 모르면 12:00 입력</p>
+
+    <div class="row row-2">
+      <div style="position:relative">
+        <label>도시명</label>
+        <input type="text" id="city" placeholder="서울, 부산, 도쿄..." autocomplete="off" oninput="searchCity(this.value)">
+        <div class="dropdown" id="city-dropdown"></div>
+      </div>
+      <div>
+        <label>국가</label>
+        <select id="country">
+          <option value="KR">대한민국</option>
+          <option value="JP">일본</option>
+          <option value="CN">중국</option>
+          <option value="US">미국</option>
+          <option value="GB">영국</option>
+          <option value="FR">프랑스</option>
+          <option value="DE">독일</option>
+        </select>
+      </div>
+    </div>
+    <div id="form-err" class="err"></div>
+    <button class="btn" onclick="submitChart()" style="margin-top:16px">✨ 내 별자리 분석하기</button>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="color:#a78bfa;font-size:1rem">차트 계산 중...</p>
+    <p style="color:#7c6fac;font-size:0.85rem;margin-top:6px">AI 분석까지 10~20초 정도 걸려요</p>
+  </div>
+
+  <div id="error-box">
+    <p class="error-msg" id="error-msg"></p>
+    <div class="error-btns">
+      <button class="btn-sm" onclick="retrySubmit()">🔄 다시 시도</button>
+      <button class="btn-sm" onclick="resetForm()">← 입력으로 돌아가기</button>
+    </div>
+  </div>
+
+  <div id="result">
+    <p class="meta" id="meta-info"></p>
+    <div class="card">
+      <h2 style="color:#c4b5fd;margin-bottom:12px;font-size:1.1rem">🔮 AI 운세 분석</h2>
+      <div class="analysis-text" id="analysis-text"></div>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleChart()">▼ 차트 데이터 보기</button>
+    <div class="card" id="chart-detail" style="display:none">
+      <table class="chart-table" id="planet-table"></table>
+    </div>
+
+    <div class="card">
+      <h2 style="color:#c4b5fd;margin-bottom:12px;font-size:1.1rem">💬 더 궁금한 게 있나요?</h2>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickAsk(this)">올해 연애운은?</button>
+        <button class="quick-btn" onclick="quickAsk(this)">직업과 커리어는?</button>
+        <button class="quick-btn" onclick="quickAsk(this)">재물운을 알려줘</button>
+        <button class="quick-btn" onclick="quickAsk(this)">내 강점이 뭔가요?</button>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div id="chat-err" class="chat-err" style="display:none">
+        <span id="chat-err-msg"></span>
+        <span class="retry-link" onclick="retrySend()"> 재시도</span>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="궁금한 것을 물어보세요..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="send-btn" onclick="sendChat()">전송</button>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetForm()">다른 생년월일로 분석하기</button>
+  </div>
+</div>
+
+<script>
+  const API = ''
+  let chartData = null, chartJson = null, chatMessages = [], lastInput = '', lastBirthData = null
+  let searchTimer = null
+
+  // ── 도시 자동완성 ─────────────────────────────
+  async function searchCity(val) {
+    const dd = document.getElementById('city-dropdown')
+    if (val.length < 2) { dd.style.display = 'none'; return }
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=5&addressdetails=1&accept-language=ko`,
+          { headers: { 'User-Agent': 'AstrologyApp/1.0' } }
+        )
+        const data = await r.json()
+        if (!data.length) { dd.style.display = 'none'; return }
+        dd.innerHTML = data.map((d, i) => {
+          const name = d.display_name.split(',').slice(0, 3).join(', ')
+          const country = (d.address?.country_code || 'kr').toUpperCase()
+          return `<div class="dropdown-item"
+            onclick="selectCity('${d.display_name.split(',')[0].replace(/'/g,"\\'")}','${country}')"
+          >${name}</div>`
+        }).join('')
+        dd.style.display = 'block'
+      } catch(e) {}
+    }, 300)
+  }
+
+  function selectCity(name, country) {
+    document.getElementById('city').value = name
+    document.getElementById('country').value = country
+    document.getElementById('city-dropdown').style.display = 'none'
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#city-dropdown') && e.target.id !== 'city')
+      document.getElementById('city-dropdown').style.display = 'none'
+  })
+
+  // ── 폼 제출 ──────────────────────────────────
+  async function submitChart() {
+    const birth = {
+      year:    parseInt(document.getElementById('year').value),
+      month:   parseInt(document.getElementById('month').value),
+      day:     parseInt(document.getElementById('day').value),
+      hour:    parseInt(document.getElementById('hour').value) || 12,
+      minute:  parseInt(document.getElementById('minute').value) || 0,
+      city:    document.getElementById('city').value.trim(),
+      country: document.getElementById('country').value,
+    }
+    const errEl = document.getElementById('form-err')
+    if (!birth.city)  { errEl.textContent = '도시명을 입력해주세요'; return }
+    if (!birth.year || birth.year < 1900) { errEl.textContent = '년도를 확인해주세요'; return }
+    errEl.textContent = ''
+    lastBirthData = birth
+    showLoading()
+    try {
+      const res = await fetch(`${API}/api/chart`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(birth)
+      })
+      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || '분석에 실패했습니다.') }
+      const data = await res.json()
+      chartData = data.chart; chartJson = data.chart_json
+      showResult(data)
+    } catch(e) { showError(e.message) }
+  }
+
+  function retrySubmit() { if (lastBirthData) submitChart() }
+
+  // ── 화면 전환 ────────────────────────────────
+  function showLoading() {
+    document.getElementById('form-card').style.display = 'none'
+    document.getElementById('loading').style.display = 'block'
+    document.getElementById('error-box').style.display = 'none'
+    document.getElementById('result').style.display = 'none'
+  }
+  function showError(msg) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('error-msg').textContent = msg
+    document.getElementById('error-box').style.display = 'block'
+  }
+  function showResult(data) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('result').style.display = 'block'
+    const offset = data.chart.utc_offset
+    document.getElementById('meta-info').textContent =
+      `📍 ${data.chart.timezone} (UTC${offset >= 0 ? '+' : ''}${offset})`
+    document.getElementById('analysis-text').textContent = data.analysis
+
+    // 차트 테이블
+    const t = document.getElementById('planet-table')
+    t.innerHTML =
+      '<tr><th colspan="3">Planet Positions</th></tr>' +
+      data.chart.planets.map(p =>
+        `<tr><td>${p.name}${p.retrograde ? ' <b style="color:#f87171">℞</b>' : ''}</td>
+         <td style="color:#a78bfa">${p.sign} ${p.degree}°</td>
+         <td style="color:#94a3b8">${p.house}하우스</td></tr>`
+      ).join('') +
+      '<tr><th colspan="3">House Positions</th></tr>' +
+      data.chart.houses.map(h =>
+        `<tr><td>${h.house}하우스</td><td style="color:#a78bfa" colspan="2">${h.sign}</td></tr>`
+      ).join('') +
+      '<tr><th colspan="3">Planet Aspects</th></tr>' +
+      data.chart.aspects.map(a =>
+        `<tr><td>${a.planet1}</td><td style="color:#a78bfa">${a.type}</td>
+         <td style="color:#94a3b8">${a.planet2} (${a.orb}°)</td></tr>`
+      ).join('') +
+      '<tr><th colspan="3">Other Aspects</th></tr>' +
+      (data.chart.other_aspects || []).map(a =>
+        `<tr><td>${a.planet1}</td><td style="color:#a78bfa">${a.type}</td>
+         <td style="color:#94a3b8">${a.planet2} (${a.orb}°)</td></tr>`
+      ).join('')
+  }
+
+  function resetForm() {
+    chartData = null; chartJson = null; chatMessages = []; lastBirthData = null
+    document.getElementById('messages').innerHTML = ''
+    document.getElementById('result').style.display = 'none'
+    document.getElementById('error-box').style.display = 'none'
+    document.getElementById('form-card').style.display = 'block'
+  }
+
+  function toggleChart() {
+    const el = document.getElementById('chart-detail')
+    const btn = document.querySelector('.toggle-btn')
+    const v = el.style.display !== 'none'
+    el.style.display = v ? 'none' : 'block'
+    btn.textContent = v ? '▼ 차트 데이터 보기' : '▲ 차트 데이터 숨기기'
+  }
+
+  // ── 채팅 ─────────────────────────────────────
+  function quickAsk(btn) { document.getElementById('chat-input').value = btn.textContent; sendChat() }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input')
+    const text = input.value.trim()
+    if (!text || !chartJson) return
+    lastInput = text; input.value = ''
+    hideChatErr(); addMessage('user', text); showTyping()
+    try {
+      const res = await fetch(`${API}/api/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chart_json: chartJson, messages: chatMessages, new_message: text })
+      })
+      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'AI 응답 실패') }
+      const data = await res.json()
+      chatMessages = data.messages; removeTyping(); addMessage('bot', data.reply)
+    } catch(e) { removeTyping(); showChatErr(e.message) }
+  }
+
+  function retrySend() { if (lastInput) { document.getElementById('chat-input').value = lastInput; sendChat() } }
+
+  function addMessage(role, text) {
+    const msgs = document.getElementById('messages')
+    const div = document.createElement('div'); div.className = `msg ${role}`
+    div.innerHTML = `<div class="bubble">${text}</div>`
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight
+  }
+  function showTyping() {
+    const msgs = document.getElementById('messages')
+    const div = document.createElement('div'); div.className = 'msg bot'; div.id = 'typing'
+    div.innerHTML = `<div class="bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight
+  }
+  function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove() }
+  function showChatErr(msg) { document.getElementById('chat-err-msg').textContent = msg; document.getElementById('chat-err').style.display = 'block' }
+  function hideChatErr() { document.getElementById('chat-err').style.display = 'none' }
+</script>
+</body>
+</html>
