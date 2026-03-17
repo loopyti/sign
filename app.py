@@ -79,7 +79,7 @@ async def geocode(city, country):
     return lat, lon, tz
 
 def calculate_chart(utc_dt, lat, lon, tz_name, utc_offset):
-    ephe_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "ephe")
+    ephe_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ephe")
     swe.set_ephe_path(ephe_path)
     jd = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
                     utc_dt.hour + utc_dt.minute/60.0)
