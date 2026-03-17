@@ -20,8 +20,20 @@ def gemini(prompt: str) -> str:
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 def gemini_chat(messages: list) -> str:
+    # parts가 문자열이면 dict로 변환
+    converted = []
+    for msg in messages:
+        parts = msg.get("parts", [])
+        converted_parts = []
+        for p in parts:
+            if isinstance(p, str):
+                converted_parts.append({"text": p})
+            else:
+                converted_parts.append(p)
+        converted.append({"role": msg["role"], "parts": converted_parts})
+
     r = requests.post(GEMINI_URL,
-        json={"contents": messages},
+        json={"contents": converted},
         timeout=60)
     r.raise_for_status()
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
