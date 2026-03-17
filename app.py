@@ -79,7 +79,7 @@ async def geocode(city, country):
     return lat, lon, tz
 
 def calculate_chart(utc_dt, lat, lon, tz_name, utc_offset):
-    ephe_path = os.environ.get("EPHE_PATH", "/content/ephe")
+    ephe_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ephe")
     swe.set_ephe_path(ephe_path)
     jd = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
                     utc_dt.hour + utc_dt.minute/60.0)
@@ -169,20 +169,33 @@ async def get_chart(birth: BirthInput):
         raise HTTPException(500, f"차트 계산 오류: {str(e)}")
 
     chart_json = json.dumps(chart, ensure_ascii=False)
-    prompt = f"""당신은 서양 점성술 전문가입니다. Whole Sign 하우스 기준으로 분석하고 한국어로 답하세요.
+    prompt = f"""당신은 30년 경력의 서양 점성술 전문가입니다. Whole Sign 하우스 기준으로 분석하고 한국어로 답하세요.
 
 출생 차트:
 ```json
 {chart_json}
 ```
 
-다음 순서로 따뜻하고 깊이 있게 분석해주세요:
-1. 전체 차트 특성 (ASC, Sun, Moon)
-2. 주요 행성 배치 의미
-3. 중요 어스펙트 해석
-4. 삶의 주요 테마 (직업, 관계, 성장)
-5. 2026년 월별 금전,관계,연애,가족,직업
-6. 조언"""
+아래 항목을 순서대로 빠짐없이 깊이 있게 작성해주세요:
+
+1. 인생의 변곡점
+   - 차트에서 보이는 삶의 주요 전환점 시기와 그 의미를 구체적으로 설명
+
+2. 10년 단위 운세 흐름
+   - 20대 / 30대 / 40대 / 50대 / 60대 각 시기의 에너지와 주요 테마를 상세히
+
+3. 직업적 재능과 잘 맞는 분야
+   - MC, 10하우스, 태양, 목성 등을 바탕으로 적합한 직업군과 재능을 구체적으로
+
+4. 시기별 조심해야 할 점
+   - 차트에서 보이는 도전적 에너지와 주의해야 할 시기 및 패턴
+
+5. 연도별 금전운 흐름 (2025~2035)
+   - 목성·토성 이동을 기반으로 연도별 재물운을 구체적으로
+
+6. 2026년 월별 상세 예측
+   - 1월부터 12월까지 각 월별로 금전 / 관계 / 연애 / 가족 / 직업 을 각각 상세하게 예측
+   - 각 월마다 5가지 항목을 빠짐없이 작성할 것"""
 
     try:
         analysis = gemini(prompt)
@@ -200,7 +213,7 @@ async def chat(req: ChatRequest):
         messages[0] = {"role": "user", "parts": [system + "\n\n" + messages[0]["parts"][0]]}
     else:
         messages.insert(0, {"role": "user", "parts": [system]})
-        messages.insert(1, {"role": "model", "parts": ["네, 차트를 확인했습니다. 무엇이 궁금하신가요?" ]})
+        messages.insert(1, {"role": "model", "parts": ["네, 차트를 확인했습니다. 무엇이 궁금하신가요?"]})
 
     messages.append({"role": "user", "parts": [req.new_message]})
 
